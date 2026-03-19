@@ -5,14 +5,13 @@ import tkinter as tk
 from tkinter import messagebox
 from pathlib import Path
 
-
 # importar configuraciones
 from config_cineseven import (CSV_PATH)
 
 # importar textos
-from Textos_Cineseven import TEXTOS_LOGIN
+from Textos_Cineseven import TEXTOS_LOGIN, ETIQUETAS_REGISTRO
 
-# importar funciones
+# importar funciones utiles
 from utils_cineseven import (validar_email, validar_password)
 
 # importar clases 
@@ -21,7 +20,7 @@ from usuario import Usuario
 from app_peliculas_gui import AppPeliculasGUI
 
 
-
+# Funcion para inicializar la interfaz en el idioma preferido del usuario.
 def seleccionar_idioma_inicial():
     win = tk.Tk()
     win.title("🎥 CineSeven APP")
@@ -96,7 +95,7 @@ def seleccionar_idioma_inicial():
     )
     btn_en.pack(side="right", padx=30)
 
-    # Pie de página
+    # Pie de pagina
     tk.Label(
         win,
         text="© 2025 CineSeven",
@@ -108,12 +107,18 @@ def seleccionar_idioma_inicial():
     win.mainloop()
     return idioma_var.get()
 
+
+
+# Funcion para la ventana de autenticación (Login o Registro)
 def ventana_login_o_registro(idioma_inicial):
+
+    # Crear ventana principal de login/registro
     win = tk.Tk()
-    win.title(("CineSeven - Acceso" if idioma_inicial == "es" else "CineSeven - Access"))
+    win.title("CineSeven - Acceso" if idioma_inicial == "es" else "CineSeven - Access")
     win.configure(bg="#3b236b")
     win.resizable(False, False)
 
+    # Centrar la ventana en la pantalla
     w, h = 500, 550
     sw = win.winfo_screenwidth()
     sh = win.winfo_screenheight()
@@ -121,10 +126,11 @@ def ventana_login_o_registro(idioma_inicial):
     y = (sh - h) // 3
     win.geometry(f"{w}x{h}+{x}+{y}")
 
+    # Crear instancia del usuario actual y cargar textos del idioma
     usuario_activo = Usuario()
     textos = TEXTOS_LOGIN[idioma_inicial]
 
-    # --- Título y pregunta principal ---
+    # Encabezado de la ventana (título y texto principal)
     tk.Label(
         win,
         text=textos["titulo"],
@@ -141,36 +147,39 @@ def ventana_login_o_registro(idioma_inicial):
         font=("Segoe UI", 14)
     ).pack(pady=(0, 30))
 
+    # Marcos contenedores para botones y formularios
     frame_botones = tk.Frame(win, bg="#3b236b")
     frame_botones.pack(pady=10)
 
     frame_form = tk.Frame(win, bg="#3b236b")
     frame_form.pack(pady=15)
 
-    # Variables
+    # Variables asociadas a los campos de entrada
     nombre_var = tk.StringVar()
     apellido_var = tk.StringVar()
     nombreapp_var = tk.StringVar()
     email_var = tk.StringVar()
     pass_var = tk.StringVar()
 
+    # Función auxiliar para limpiar el formulario actual
     def limpiar_formulario():
         for widget in frame_form.winfo_children():
             widget.destroy()
 
-    # --------------------------------
-    # LOGIN
-    # --------------------------------
+    # SECCIÓN: LOGIN (Iniciar sesión)
     def mostrar_login():
         limpiar_formulario()
 
+        # Campos de correo y contraseña
         tk.Label(frame_form, text=textos["email"], bg="#3b236b", fg="white").pack(pady=5)
         tk.Entry(frame_form, textvariable=email_var, width=40).pack()
         tk.Label(frame_form, text=textos["password"], bg="#3b236b", fg="white").pack(pady=5)
 
+        # Campo de contraseña con opción para mostrar/ocultar
         pw_entry = tk.Entry(frame_form, textvariable=pass_var, width=40, show="*")
         pw_entry.pack()
 
+        # Función para alternar visibilidad de contraseña
         def toggle_pw():
             if pw_entry.cget("show") == "":
                 pw_entry.config(show="*")
@@ -179,14 +188,16 @@ def ventana_login_o_registro(idioma_inicial):
                 pw_entry.config(show="")
                 btn_pw.config(text=textos["pw_ocultar"])
 
-
+        # Botón para mostrar/ocultar contraseña
         btn_pw = tk.Button(frame_form, text=textos["pw_mostrar"], bg="#6148a6", fg="white", command=toggle_pw)
         btn_pw.pack(pady=4)
 
-
+        # Función para iniciar sesión
         def iniciar():
             email = email_var.get().strip()
             password = pass_var.get().strip()
+
+            # Validaciones básicas
             if not (email and password):
                 messagebox.showwarning("Login", textos["aviso_login"])
                 return
@@ -194,16 +205,17 @@ def ventana_login_o_registro(idioma_inicial):
                 messagebox.showerror("❌", textos["email_invalido"])
                 return
 
+            # Verificar credenciales
             ok, _ = usuario_activo.login(email, password)
             if ok:
                 nombre_display = usuario_activo.nombre_app or usuario_activo.nombre or usuario_activo.email or ""
                 saludo = textos["saludo"].format(nombre=nombre_display)
                 messagebox.showinfo("✅", saludo)
-                win.destroy()
+                win.destroy()  # cerrar la ventana tras iniciar sesión
             else:
-                # si login falló, la función usuario_activo.login debería devolver False y un mensaje
                 messagebox.showerror("❌", textos["login_incorrecto"])
 
+        # Botón principal de login
         tk.Button(
             frame_form,
             text=textos["btn_login"],
@@ -214,32 +226,14 @@ def ventana_login_o_registro(idioma_inicial):
             command=iniciar
         ).pack(pady=15)
 
-    # --------------------------------
-    # REGISTRO
-    # --------------------------------
+    # SECCIÓN: REGISTRO (Crear nueva cuenta)
     def mostrar_registro():
         limpiar_formulario()
 
-        # Campos adicionales según idioma
-        etiquetas = {
-            "es": {
-                "nombre": "Nombre:",
-                "apellido": "Apellido:",
-                "nombre_app": "Nombre de app:",
-                "email": "Correo electrónico:",
-                "password": "Contraseña:"
-            },
-            "en": {
-                "nombre": "Name:",
-                "apellido": "Last name:",
-                "nombre_app": "App name:",
-                "email": "Email:",
-                "password": "Password:"
-            }
-        }
+        # Cargar etiquetas según idioma
+        e = ETIQUETAS_REGISTRO[idioma_inicial]
 
-        e = etiquetas[idioma_inicial]
-
+        # Crear campos de texto dinámicamente
         for label_text, var in [
             (e["nombre"], nombre_var),
             (e["apellido"], apellido_var),
@@ -251,6 +245,7 @@ def ventana_login_o_registro(idioma_inicial):
             show = "*" if "Password" in label_text or "Contraseña" in label_text else None
             tk.Entry(frame_form, textvariable=var, width=40, show=show).pack()
 
+        # Función para registrar un nuevo usuario
         def registrar():
             nombre = nombre_var.get().strip()
             apellido = apellido_var.get().strip()
@@ -258,18 +253,18 @@ def ventana_login_o_registro(idioma_inicial):
             email = email_var.get().strip()
             password = pass_var.get().strip()
 
+            # Validaciones
             if not (nombre and email and password):
                 messagebox.showwarning("Registro", textos["aviso_reg"])
                 return
-
             if not validar_email(email):
                 messagebox.showerror("❌", textos["email_invalido"])
                 return
-
             if not validar_password(password):
                 messagebox.showerror("❌", textos["password_invalida"])
                 return
 
+            # Intentar registrar al usuario
             ok, msg = usuario_activo.registrar(
                 nombre=nombre,
                 email=email,
@@ -278,18 +273,18 @@ def ventana_login_o_registro(idioma_inicial):
                 nombre_app=nombre_app
             )
             if ok:
-                messagebox.showinfo("✅", msg)  # mantiene el mensaje de "Usuario registrado"
-            # iniciar sesión automáticamente y mostrar saludo
+                # Mostrar mensaje y loguear automáticamente
+                messagebox.showinfo("✅", msg)
                 ok2, _ = usuario_activo.login(email, password)
                 if ok2:
                     nombre_display = usuario_activo.nombre_app or usuario_activo.nombre or usuario_activo.email or ""
                     saludo = textos["saludo"].format(nombre=nombre_display)
                     messagebox.showinfo("✅", saludo)
                 win.destroy()
-            
             else:
                 messagebox.showerror("❌", msg)
 
+        # Boton principal de registro
         tk.Button(
             frame_form,
             text=textos["btn_registro"],
@@ -300,7 +295,7 @@ def ventana_login_o_registro(idioma_inicial):
             command=registrar
         ).pack(pady=15)
 
-    # Botones principales
+    # Botones principales (para alternar entre Login / Registro)
     tk.Button(
         frame_botones,
         text=textos["btn_login"],
@@ -321,6 +316,7 @@ def ventana_login_o_registro(idioma_inicial):
         command=mostrar_registro
     ).pack(side="right", padx=15)
 
+    # Pie de pagina
     tk.Label(
         win,
         text="© 2025 CineSeven",
@@ -329,10 +325,12 @@ def ventana_login_o_registro(idioma_inicial):
         font=("Segoe UI", 10)
     ).pack(side="bottom", pady=20)
 
+    # Mantener ventana activa hasta que el usuario decida
     win.mainloop()
     return usuario_activo
 
-# Inicio
+
+# Bloque principal de ejecucion
 if __name__ == "__main__":
     if not Path(CSV_PATH).exists():
         tk.messagebox.showerror("Error", f"No se encontró el archivo {CSV_PATH}")
@@ -347,5 +345,3 @@ if __name__ == "__main__":
             root.mainloop()
         else:
             print("⚠️ No se pudo iniciar sesión o no hay usuario activo.")
-
-
